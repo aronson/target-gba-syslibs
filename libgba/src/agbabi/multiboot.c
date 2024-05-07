@@ -14,7 +14,7 @@
 #include <errno.h>
 
 #undef errno
-extern int errno;
+extern _Thread_local int errno;
 
 typedef unsigned char u8;
 typedef unsigned short u16;
