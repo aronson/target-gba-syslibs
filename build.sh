@@ -5,7 +5,7 @@ if [ -d build ]; then
 	rm -r build
 fi
 mkdir build
-cp -aRv target build/
+cp -av target build/
 cd crts
 make WF_TARGET_DIR=../build/target/gba/rom
 DESTDIR=../build make install

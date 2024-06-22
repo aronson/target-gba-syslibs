@@ -109,8 +109,8 @@ doc:
 install: all
 	@echo "  INSTALL $(ARCHIVE)"
 	$(_V)$(MKDIR) -p $(WF_TARGET_DIR)/../lib
-	$(_V)$(CP) -ar include $(WF_TARGET_DIR)/..
-	$(_V)$(CP) -ar $(ARCHIVE) $(WF_TARGET_DIR)/../lib
+	$(_V)$(CP) -a include $(WF_TARGET_DIR)/..
+	$(_V)$(CP) -a $(ARCHIVE) $(WF_TARGET_DIR)/../lib
 
 # TODO: Write install stage.
 
