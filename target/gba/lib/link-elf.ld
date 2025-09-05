@@ -20,6 +20,10 @@ PHDRS
     IWRAM PT_LOAD FLAGS(7);
     EWRAM PT_LOAD FLAGS(7);
     VRAM PT_LOAD FLAGS(7);
+    BSS PT_LOAD FLAGS(6);
+    BSS_IWRAM PT_LOAD FLAGS(6);
+    BSS_EWRAM PT_LOAD FLAGS(6);
+    BSS_VRAM PT_LOAD FLAGS(6);
 }
 
 SECTIONS
@@ -61,16 +65,15 @@ SECTIONS
     .preinit_array :
     {
         PROVIDE_HIDDEN (__preinit_array_start = .);
+        PROVIDE_HIDDEN (__bothinit_array_start = .);
         KEEP (*(.preinit_array))
         PROVIDE_HIDDEN (__preinit_array_end = .);
-    } >ROM
 
-    .init_array :
-    {
         PROVIDE_HIDDEN (__init_array_start = .);
         KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
         KEEP (*(.init_array EXCLUDE_FILE (*crtbegin.o *crtbegin?.o *crtend.o *crtend?.o ) .ctors))
         PROVIDE_HIDDEN (__init_array_end = .);
+        PROVIDE_HIDDEN (__bothinit_array_end = .);
     } >ROM
 
     .fini_array :
@@ -89,40 +92,40 @@ SECTIONS
         /* Pad section only if there's content, per LD docs
            Prevents empty sections from taking up ROM space/showing up in objdump */
         . = ALIGN(. != 0 ? 4 : 1);
-    } >IWRAM AT>ROM :IWRAM
+    } >IWRAM AT>IWRAM_LOAD :IWRAM
 
     .ewram : ALIGN(4)
     {
         *(SORT(.ewram.sorted.*))
         *(.ewram .ewram.*)
         . = ALIGN(. != 0 ? 4 : 1);
-    } >EWRAM AT>ROM :EWRAM
+    } >EWRAM AT>EWRAM_LOAD :EWRAM
 
     .vram : ALIGN(4)
     {
         *(SORT(.vram.sorted.*))
         *(.vram .vram.*)
         . = ALIGN(. != 0 ? 4 : 1);
-    } >VRAM AT>ROM :VRAM
+    } >VRAM AT>VRAM_LOAD :VRAM
 
     .data : ALIGN(4)
     {
         *(.data .data.* .gnu.linkonce.d.*)
         . = ALIGN(. != 0 ? 4 : 1);
-    } >DATA AT>ROM :DATA
+    } >DATA AT>DATA_LOAD :DATA
 
     .tdata : ALIGN(4)
     {
         *(.tdata .tdata.* .gnu.linkonce.td.*)
         . = ALIGN(. != 0 ? 4 : 1);
-    } >DATA AT>ROM :DATA
+    } >DATA AT>DATA_LOAD :DATA
 
     .tbss (NOLOAD) : ALIGN(4)
     {
         *(.tbss .tbss.* .gnu.linkonce.tb.*)
         *(.tcommon)
         . = ALIGN(. != 0 ? 4 : 1);
-    } >DATA AT>ROM :DATA
+    } >DATA AT>DATA_LOAD :DATA
 
     .bss (NOLOAD) : ALIGN(4)
     {
@@ -130,31 +133,31 @@ SECTIONS
         *(.bss .bss.* .gnu.linkonce.b.*)
         *(COMMON)
         . = ALIGN(. != 0 ? 4 : 1);
-    } >BSS :NONE
+    } >BSS :BSS
 
     .bss.iwram (NOLOAD) : ALIGN(4)
     {
         *(.iwram_bss .iwram_bss.*)
         *(.sbss .sbss.*)
         . = ALIGN(. != 0 ? 4 : 1);
-    } >IWRAM
+    } >IWRAM :BSS_IWRAM
 
     .bss.ewram (NOLOAD) : ALIGN(4)
     {
         *(.ewram_bss .ewram_bss.*)
         . = ALIGN(. != 0 ? 4 : 1);
-    } >EWRAM
+    } >EWRAM :BSS_EWRAM
 
     .bss.vram (NOLOAD) : ALIGN(4)
     {
         *(.vram_bss .vram_bss.*)
         . = ALIGN(. != 0 ? 4 : 1);
-    } >VRAM
+    } >VRAM :BSS_VRAM
 
     .noinit (NOLOAD) :
     {
         *(.noinit .noinit.* .gnu.linkonce.n.*)
-    } >NOINIT
+    } >NOINIT :NONE
 
     .pad :
     {
@@ -167,33 +170,33 @@ SECTIONS
 
     __iwram_lma = LOADADDR(.iwram);
     __iwram_vma = ADDR(.iwram);
-    __iwram_dma = 0x84000000 | SIZEOF(.iwram) >> 2;
+    __iwram_dma = 0x04000000 | SIZEOF(.iwram) >> 2;
 
     __ewram_lma = LOADADDR(.ewram);
     __ewram_vma = ADDR(.ewram);
-    __ewram_dma = 0x84000000 | SIZEOF(.ewram) >> 2;
+    __ewram_dma = 0x04000000 | SIZEOF(.ewram) >> 2;
 
     __vram_lma = LOADADDR(.vram);
     __vram_vma = ADDR(.vram);
-    __vram_dma = 0x84000000 | SIZEOF(.vram) >> 2;
+    __vram_dma = 0x04000000 | SIZEOF(.vram) >> 2;
 
     __data_lma = LOADADDR(.data);
     __data_vma = ADDR(.data);
-    __data_dma = 0x84000000 | (SIZEOF(.data) + SIZEOF(.tdata)) >> 2;
+    __data_dma = 0x04000000 | (SIZEOF(.data) + SIZEOF(.tdata)) >> 2;
 
     __bss_vma = ADDR(.tbss);
-    __bss_dma = 0x85000000 | (SIZEOF(.tbss) + SIZEOF(.bss)) >> 2;
+    __bss_dma = 0x05000000 | (SIZEOF(.tbss) + SIZEOF(.bss)) >> 2;
 
     __tls_base = ADDR(.tdata);
 
     __iwram_bss_vma = ADDR(.bss.iwram);
-    __iwram_bss_dma = 0x85000000 | SIZEOF(.bss.iwram) >> 2;
+    __iwram_bss_dma = 0x05000000 | SIZEOF(.bss.iwram) >> 2;
 
     __ewram_bss_vma = ADDR(.bss.ewram);
-    __ewram_bss_dma = 0x85000000 | SIZEOF(.bss.ewram) >> 2;
+    __ewram_bss_dma = 0x05000000 | SIZEOF(.bss.ewram) >> 2;
 
     __vram_bss_vma = ADDR(.bss.vram);
-    __vram_bss_dma = 0x85000000 | SIZEOF(.bss.vram) >> 2;
+    __vram_bss_dma = 0x05000000 | SIZEOF(.bss.vram) >> 2;
 
     /* Stabs debugging sections.  */
     .stab          0 : { *(.stab) }
